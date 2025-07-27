@@ -25,7 +25,7 @@ namespace NetworkScannerApp
         private Stopwatch scanStopwatch = new Stopwatch();
         private int totalIPs;
         private int scannedIPs;
-        private const int ClosedPortThreshold = 90; // Percentage of closed ports to trigger firewall warning
+        private const int ClosedPortThreshold = 90; 
 
         public MainForm()
         {
