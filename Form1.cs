@@ -25,7 +25,7 @@ namespace NetworkScannerApp
         private Stopwatch scanStopwatch = new Stopwatch();
         private int totalIPs;
         private int scannedIPs;
-        private const int ClosedPortThreshold = 90; 
+        private const int ClosedPortThreshold = 90;
 
         public MainForm()
         {
@@ -43,6 +43,7 @@ namespace NetworkScannerApp
             UpdatePortTextBoxes();
         }
 
+        // Khởi tạo BackgroundWorker để quét mạng
         private void InitializeScanWorker()
         {
             scanWorker = new BackgroundWorker();
@@ -53,6 +54,7 @@ namespace NetworkScannerApp
             scanWorker.RunWorkerCompleted += ScanWorker_RunWorkerCompleted;
         }
 
+        // Cập nhật thông tin quét trên giao diện theo thời gian thực
         private void timerUpdate_Tick(object sender, EventArgs e)
         {
             if (scanWorker.IsBusy)
@@ -61,11 +63,13 @@ namespace NetworkScannerApp
             }
         }
 
+        // Cập nhật danh sách cổng TCP/UDP dựa trên chế độ quét
         private void comboBoxScanMode_SelectedIndexChanged(object sender, EventArgs e)
         {
             UpdatePortTextBoxes();
         }
 
+        // Thiết lập danh sách cổng TCP/UDP cho các chế độ quét
         private void UpdatePortTextBoxes()
         {
             string selectedMode = comboBoxScanMode.SelectedItem?.ToString();
@@ -92,6 +96,7 @@ namespace NetworkScannerApp
             }
         }
 
+        // Bắt đầu quá trình quét mạng
         private void btnStartScan_Click(object sender, EventArgs e)
         {
             if (scanWorker.IsBusy)
@@ -139,6 +144,7 @@ namespace NetworkScannerApp
             scanWorker.RunWorkerAsync();
         }
 
+        // Hủy quá trình quét mạng
         private void btnStopScan_Click(object sender, EventArgs e)
         {
             if (scanWorker.IsBusy)
@@ -149,12 +155,14 @@ namespace NetworkScannerApp
             }
         }
 
+        // Xóa nội dung nhật ký
         private void btnClearLog_Click(object sender, EventArgs e)
         {
             textBoxLog.Clear();
             AppendLog("Nhật ký đã được xóa.");
         }
 
+        // Lưu nhật ký quét vào tệp
         private void btnSaveLog_Click(object sender, EventArgs e)
         {
             if (string.IsNullOrEmpty(textBoxLog.Text))
@@ -176,22 +184,26 @@ namespace NetworkScannerApp
             }
         }
 
+        // Xuất kết quả quét sang định dạng văn bản
         private void btnExportTxt_Click(object sender, EventArgs e)
         {
             ExportResults(".txt");
         }
 
+        // Xuất kết quả quét sang định dạng CSV
         private void btnExportCsv_Click(object sender, EventArgs e)
         {
             ExportResults(".csv");
         }
 
+        // Thực hiện quét mạng trong luồng nền
         private void ScanWorker_DoWork(object sender, DoWorkEventArgs e)
         {
             var devices = ScanNetwork(networkInfo, cancellationTokenSource.Token, scanWorker);
             e.Result = devices;
         }
 
+        // Cập nhật tiến trình quét và hiển thị thiết bị tìm thấy
         private void ScanWorker_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
             var device = e.UserState as NetworkDevice;
@@ -209,6 +221,7 @@ namespace NetworkScannerApp
             progressBarScan.Value = Math.Min(e.ProgressPercentage, 100);
         }
 
+        // Xử lý khi quét mạng hoàn tất
         private void ScanWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             scanStopwatch.Stop();
@@ -242,6 +255,7 @@ namespace NetworkScannerApp
             labelScanInfo.Text = $"Thông tin quét: Đã quét {scannedIPs}/{totalIPs} IP, Tìm thấy {scanResults.Count} thiết bị, Thời gian: {scanStopwatch.Elapsed:mm\\:ss}";
         }
 
+        // Thêm thông báo vào nhật ký
         private void AppendLog(string message)
         {
             if (textBoxLog.InvokeRequired)
@@ -254,6 +268,7 @@ namespace NetworkScannerApp
             }
         }
 
+        // Lấy thông tin mạng cục bộ
         private NetworkInfo GetNetworkInfo()
         {
             var localIP = GetLocalIPAddress();
@@ -279,6 +294,7 @@ namespace NetworkScannerApp
             };
         }
 
+        // Hiển thị thông tin mạng trên giao diện
         private void DisplayNetworkInfo(NetworkInfo info)
         {
             labelNetworkInfo.Text = $"Địa chỉ IP cục bộ: {info.LocalIP}\n" +
@@ -287,6 +303,7 @@ namespace NetworkScannerApp
                                     $"Phạm vi IP: {info.FirstIP} - {info.LastIP}";
         }
 
+        // Quét toàn bộ mạng để tìm thiết bị
         private List<NetworkDevice> ScanNetwork(NetworkInfo info, CancellationToken token, BackgroundWorker worker)
         {
             var activeDevices = new List<NetworkDevice>();
@@ -344,6 +361,7 @@ namespace NetworkScannerApp
             return activeDevices.OrderBy(d => d.IPAddress).ToList();
         }
 
+        // Quét một thiết bị để kiểm tra trạng thái và cổng
         private async Task<NetworkDevice> ScanDeviceAsync(IPAddress ipAddress, CancellationToken token)
         {
             bool isAlive = await ArpPing(ipAddress) || await IcmpPing(ipAddress, token);
@@ -388,6 +406,7 @@ namespace NetworkScannerApp
             };
         }
 
+        // Quét các cổng TCP trên một thiết bị
         private async Task<(List<NetworkPort> openPorts, int closedPorts)> ScanPortsAsync(IPAddress ipAddress, int[] ports, CancellationToken token, int timeout)
         {
             var openPorts = new List<NetworkPort>();
@@ -440,6 +459,7 @@ namespace NetworkScannerApp
             return (openPorts, closedPorts);
         }
 
+        // Quét các cổng UDP trên một thiết bị
         private async Task<(List<NetworkPort> openPorts, int closedPorts)> ScanUDPPortsAsync(IPAddress ipAddress, int[] udpPorts, CancellationToken token, int timeout)
         {
             var openPorts = new List<NetworkPort>();
@@ -511,6 +531,7 @@ namespace NetworkScannerApp
             return (openPorts, closedPorts);
         }
 
+        // Tạo gói tin UDP tùy thuộc vào cổng
         private byte[] GetUdpPacketForPort(int port)
         {
             switch (port)
@@ -525,6 +546,7 @@ namespace NetworkScannerApp
             }
         }
 
+        // Tạo gói tin DNS
         private byte[] CreateDnsQuery()
         {
             return new byte[] {
@@ -534,6 +556,7 @@ namespace NetworkScannerApp
             };
         }
 
+        // Tạo gói tin SNMP
         private byte[] CreateSnmpQuery()
         {
             return new byte[] {
@@ -544,6 +567,7 @@ namespace NetworkScannerApp
             };
         }
 
+        // Tạo gói tin DHCP Discover
         private byte[] CreateDhcpDiscover()
         {
             return new byte[] {
@@ -554,6 +578,7 @@ namespace NetworkScannerApp
             };
         }
 
+        // Tạo gói tin NTP
         private byte[] CreateNtpRequest()
         {
             return new byte[] {
@@ -564,6 +589,7 @@ namespace NetworkScannerApp
             };
         }
 
+        // Tạo gói tin IPsec
         private byte[] CreateIpsecPacket()
         {
             return new byte[] {
@@ -574,12 +600,14 @@ namespace NetworkScannerApp
             };
         }
 
+        // Tạo gói tin SIP
         private byte[] CreateSipPacket()
         {
             string sipRequest = "OPTIONS sip:example.com SIP/2.0\r\n\r\n";
             return Encoding.ASCII.GetBytes(sipRequest);
         }
 
+        // Phân tích danh sách cổng từ chuỗi đầu vào
         private int[] ParsePortList(string input, int start, int end)
         {
             try
@@ -601,6 +629,7 @@ namespace NetworkScannerApp
             }
         }
 
+        // Lấy phạm vi cổng từ chuỗi đầu vào
         private (int start, int end) GetPortRange(string input)
         {
             try
@@ -620,6 +649,7 @@ namespace NetworkScannerApp
             }
         }
 
+        // Xuất kết quả quét sang tệp
         private void ExportResults(string format)
         {
             if (scanResults == null || scanResults.Count == 0)
@@ -644,6 +674,7 @@ namespace NetworkScannerApp
             }
         }
 
+        // Lưu kết quả quét vào tệp văn bản
         private void SaveToTextFile(string path)
         {
             using (var writer = new StreamWriter(path))
@@ -675,6 +706,7 @@ namespace NetworkScannerApp
             }
         }
 
+        // Lưu kết quả quét vào tệp CSV
         private void SaveToCsvFile(string path)
         {
             using (var writer = new StreamWriter(path))
@@ -692,6 +724,7 @@ namespace NetworkScannerApp
             }
         }
 
+        // Lấy địa chỉ IP cục bộ của máy
         private IPAddress GetLocalIPAddress()
         {
             foreach (NetworkInterface ni in NetworkInterface.GetAllNetworkInterfaces())
@@ -710,6 +743,7 @@ namespace NetworkScannerApp
             return null;
         }
 
+        // Lấy mặt nạ mạng cho địa chỉ IP
         private IPAddress GetSubnetMask(IPAddress ipAddress)
         {
             foreach (NetworkInterface ni in NetworkInterface.GetAllNetworkInterfaces())
@@ -725,6 +759,7 @@ namespace NetworkScannerApp
             return null;
         }
 
+        // Tính toán địa chỉ mạng từ IP và mặt nạ mạng
         private IPAddress CalculateNetworkAddress(IPAddress ipAddress, IPAddress subnetMask)
         {
             byte[] ipBytes = ipAddress.GetAddressBytes();
@@ -737,6 +772,7 @@ namespace NetworkScannerApp
             return new IPAddress(networkBytes);
         }
 
+        // Tính toán địa chỉ broadcast từ IP và mặt nạ mạng
         private IPAddress CalculateBroadcastAddress(IPAddress ipAddress, IPAddress subnetMask)
         {
             byte[] ipBytes = ipAddress.GetAddressBytes();
@@ -749,6 +785,7 @@ namespace NetworkScannerApp
             return new IPAddress(broadcastBytes);
         }
 
+        // Tính toán CIDR từ mặt nạ mạng
         private int CalculateCIDR(IPAddress subnetMask)
         {
             byte[] maskBytes = subnetMask.GetAddressBytes();
@@ -761,6 +798,7 @@ namespace NetworkScannerApp
             return cidr;
         }
 
+        // Lấy địa chỉ IP đầu tiên của dải mạng
         private IPAddress GetFirstHostIP(IPAddress networkAddress)
         {
             byte[] bytes = networkAddress.GetAddressBytes();
@@ -768,6 +806,7 @@ namespace NetworkScannerApp
             return new IPAddress(bytes);
         }
 
+        // Lấy địa chỉ IP cuối cùng của dải mạng
         private IPAddress GetLastHostIP(IPAddress broadcastAddress)
         {
             byte[] bytes = broadcastAddress.GetAddressBytes();
@@ -775,6 +814,7 @@ namespace NetworkScannerApp
             return new IPAddress(bytes);
         }
 
+        // Kiểm tra thiết bị bằng ARP ping
         private async Task<bool> ArpPing(IPAddress ipAddress)
         {
             try
@@ -789,6 +829,7 @@ namespace NetworkScannerApp
             }
         }
 
+        // Kiểm tra thiết bị bằng ICMP ping
         private async Task<bool> IcmpPing(IPAddress ipAddress, CancellationToken token)
         {
             try
@@ -803,6 +844,7 @@ namespace NetworkScannerApp
             }
         }
 
+        // Lấy địa chỉ MAC của thiết bị
         private async Task<string> GetMacAddressAsync(IPAddress ipAddress)
         {
             try
@@ -833,6 +875,7 @@ namespace NetworkScannerApp
             }
         }
 
+        // Lấy tên máy chủ từ địa chỉ IP
         private async Task<string> GetHostNameAsync(IPAddress ipAddress)
         {
             try
@@ -846,6 +889,7 @@ namespace NetworkScannerApp
             }
         }
 
+        // Lấy tên dịch vụ tương ứng với số cổng
         private string GetServiceName(int port)
         {
             switch (port)
